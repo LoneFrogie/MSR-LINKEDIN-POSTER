@@ -1,0 +1,74 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --brand-blue: #0A66C2;
+  --brand-blue-dark: #004182;
+  --brand-navy: #1a1a2e;
+  --accent: #E91E8C;
+  --bg: #f3f2ef;
+  --card-bg: #ffffff;
+  --text: #1d2226;
+  --text-muted: #666666;
+  --border: #e0e0e0;
+  --success: #057642;
+  --danger: #cc1016;
+  --warning: #b07d00;
+  --radius: 10px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+
+body {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+a { color: var(--brand-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--brand-blue);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--brand-blue-dark); }
+
+.btn-danger {
+  background: #fce8e9;
+  color: var(--danger);
+}
+.btn-danger:hover:not(:disabled) { background: #f5c6c7; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--brand-blue);
+  border: 1px solid var(--brand-blue);
+}
+.btn-ghost:hover:not(:disabled) { background: #e8f0fe; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.badge-pending  { background: #fff3cd; color: var(--warning); }
+.badge-approved { background: #d4edda; color: var(--success); }
+.badge-rejected { background: #fce8e9; color: var(--danger); }
+.badge-posted   { background: #cce5ff; color: var(--brand-blue); }
