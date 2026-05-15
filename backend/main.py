@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 
 from dotenv import load_dotenv
-load_dotenv(os.path.join(_ROOT, ".env"))
+load_dotenv()  # loads .env from current working directory if present
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
