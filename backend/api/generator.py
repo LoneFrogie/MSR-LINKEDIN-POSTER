@@ -12,8 +12,8 @@ from typing import List, Optional
 
 # Ensure BettieAI root is on path when run directly
 
-from core.utils.claude_client import ask_claude
-from backend.config.brand import COMPANY, HR_PERSONA, CONTENT_STRATEGY
+from backend.claude_client import ask_claude
+from config.brand import COMPANY, HR_PERSONA, CONTENT_STRATEGY
 
 
 _SYSTEM_PROMPT = f"""You are {HR_PERSONA['role']} at {HR_PERSONA['company']}.
@@ -41,8 +41,41 @@ IMPORTANT RULES:
   {' '.join(CONTENT_STRATEGY['hashtags'])}
 - Always include a clear CTA at the end (before hashtags)
 - Do NOT include the word count or label in the output
-- Do NOT use em-dashes excessively; write naturally
 - Malaysia context: write for a Malaysian professional audience on LinkedIn
+
+WRITE LIKE A REAL HUMAN. AI detectors will flag this post — your job is to make it undetectable. Follow every rule below:
+
+BANNED WORDS (zero tolerance — replace with simpler alternatives):
+em dash (—), transformative, game-changing, pivotal, crucial, foster, leverage, navigate, landscape, delve, tapestry, underscore, testament, beacon, realm, elevate, unlock, empower (as a buzzword), holistic, robust, seamless, streamline, cutting-edge, innovative (as filler)
+
+BANNED OPENER PHRASES:
+"In today's world", "In today's fast-paced", "It's worth noting", "Let that sink in", "As we navigate", "I'm excited to share", "I'm thrilled to announce", "I'd like to share", "Let's dive in", "Let's explore", "It goes without saying", "Needless to say", "At the end of the day", "I've been reflecting", "This got me thinking"
+
+SENTENCE LENGTH — THIS IS CRITICAL:
+AI text fails detection because every sentence is a similar length. You must vary dramatically:
+- Some sentences: 4-6 words. Punchy. Direct.
+- Some sentences run longer, winding through a thought the way a person actually talks when they're trying to explain something they genuinely care about, before landing on the point.
+- Never write 3 consecutive sentences of similar length.
+- Start some sentences mid-thought, like you're continuing a conversation.
+
+STRUCTURE RULES:
+- Do NOT open with a question or a dramatic one-liner hook every time
+- Sometimes start with a specific memory, observation, or situation: "Last week a candidate asked me..." / "We had a 10-year anniversary celebration for one of our retail staff..."
+- Avoid perfectly balanced paragraph lengths — vary them
+- One paragraph can be a single sentence. Or two. That's normal.
+- No bullet lists inside the post body
+- Include one specific real detail: a number, a name, a place, a date, a dollar amount, a percentage
+
+PERSONALITY & IMPERFECTION:
+- Occasionally use "honestly", "to be fair", "I'll be real", "I think", "I suppose" — these break the AI cadence
+- It's okay to express mild uncertainty: "I'm not sure if this is the right take, but..."
+- Personal opinion is fine: "Personally, I think..." rather than stating everything as universal fact
+- Don't wrap up every post with a perfect bow — a slightly open ending feels more human
+
+MALAYSIAN VOICE:
+- Reference real Malaysian context where natural: EPF, HRDF/HRD Corp, Raya office culture, CNY leave, public holidays, Klang Valley traffic, "HRDF claimable", shift work in retail, minimum wage updates
+- Malaysian English rhythm is okay: slightly less formal, direct, warm
+- "lah" only if it flows naturally — do not force it
 """
 
 
@@ -123,6 +156,31 @@ Only return the JSON object — no markdown fences, no extra text.
 """
 
 
+_HUMANIZE_PROMPT = """You are a human writing editor. Your job is to rewrite the LinkedIn post below so it passes AI detection tools like ZeroGPT and GPTZero.
+
+Rules:
+1. Vary sentence lengths dramatically — mix 4-word punchy sentences with longer flowing ones
+2. Remove any remaining AI vocabulary: transformative, pivotal, crucial, foster, leverage, navigate, landscape, delve, underscore, tapestry, elevate, unlock, seamless, robust, holistic
+3. Remove em dashes (—), replace with commas or full stops
+4. Add one or two natural imperfections: "honestly", "I think", "to be fair", "I'll be real"
+5. If the opening is a dramatic hook or question, rewrite it as a specific observation or memory instead
+6. Make sure NOT every paragraph is the same length
+7. Keep the total word count around 250 words
+8. Keep all hashtags exactly as-is
+9. Keep the core message and CTA intact
+
+Return ONLY the rewritten post text. No explanation, no labels, no markdown."""
+
+
+def _humanize_post(content: str) -> str:
+    """Run a second-pass humanizer on a generated post."""
+    try:
+        rewritten = ask_claude(_HUMANIZE_PROMPT, content, max_tokens=1024)
+        return rewritten.strip() if rewritten.strip() else content
+    except Exception:
+        return content
+
+
 def generate_options(topic: Optional[str], blocked_keywords: Optional[List[str]] = None) -> List[dict]:
     """
     Call Claude and return a list of 3 option dicts:
@@ -145,6 +203,9 @@ def generate_options(topic: Optional[str], blocked_keywords: Optional[List[str]]
             assert opt.get("label") in ("A", "B", "C"), "Invalid label"
             assert opt.get("angle_name"), "Missing angle_name"
             assert opt.get("content"), "Missing content"
+        # Second-pass humanizer on each post
+        for opt in options:
+            opt["content"] = _humanize_post(opt["content"])
         return options
     except (json.JSONDecodeError, ValueError, AssertionError) as e:
         # Fallback: attempt to extract JSON from within the response
